@@ -60,8 +60,10 @@ class SettingsProvider:
         # TODO: Write to memory with mmap -> https://docs.python.org/2/library/mmap.html
         settings_obj = self.settings.get(area)
         if settings_obj is None:  # and hasattr(self, 'BASE_PATH'):
-            canonical_path = os.path.join(self.BASE_PATH, area) if hasattr(self, 'BASE_PATH') else ""
-            if not os.path.exists(canonical_path):  # path string or empty string.
+            canonical_path = os.path.join(
+                self.BASE_PATH, area) if hasattr(self, 'BASE_PATH') else ""
+            # path string or empty string.
+            if not os.path.exists(canonical_path):
                 info = {}
                 if defaults:
                     info.update(defaults)
@@ -109,7 +111,8 @@ class Settings:
         try:
             return self.info[k]
         except KeyError as e:
-            pyfalog.warning("Failed to get setting for '{0}'. Exception: {1}", k, e)
+            pyfalog.warning(
+                "Failed to get setting for '{0}'. Exception: {1}", k, e)
             return None
 
     def __setitem__(self, k, v):
@@ -155,17 +158,17 @@ class NetworkSettings:
     def __init__(self):
 
         serviceNetworkDefaultSettings = {
-            "mode"    : self.PROXY_MODE_AUTODETECT,
-            "type"    : "https",
-            "address" : "",
-            "port"    : "",
-            "access"  : 15,
-            "login"   : None,
+            "mode": self.PROXY_MODE_AUTODETECT,
+            "type": "https",
+            "address": "",
+            "port": "",
+            "access": 15,
+            "login": None,
             "password": None
         }
 
         self.serviceNetworkSettings = SettingsProvider.getInstance().getSettings(
-                "pyfaServiceNetworkSettings", serviceNetworkDefaultSettings)
+            "pyfaServiceNetworkSettings", serviceNetworkDefaultSettings)
 
     def isEnabled(self, type):
         if type & self.serviceNetworkSettings["access"]:
@@ -271,17 +274,47 @@ class NetworkSettings:
         proxy_settings = self.getProxySettings()
         if proxy_settings is not None:
             # form proxy address in format "http://host:port
-            proxy_host_port = '{}:{}'.format(proxy_settings[0], proxy_settings[1])
+            proxy_host_port = '{}:{}'.format(
+                proxy_settings[0], proxy_settings[1])
             proxy_auth_details = self.getProxyAuthDetails()
             user_pass = ''
             if proxy_auth_details is not None:
                 # construct prefix in form "user:password@"
-                user_pass = '{}:{}@'.format(proxy_auth_details[0], proxy_auth_details[1])
+                user_pass = '{}:{}@'.format(
+                    proxy_auth_details[0], proxy_auth_details[1])
             proxies = {
                 'http': 'http://' + user_pass + proxy_host_port,
                 'https': 'http://' + user_pass + proxy_host_port
             }
         return proxies
+
+
+class ImportSettings:
+    """
+    Settings used when importing fits
+    """
+    _instance = None
+
+    @classmethod
+    def getInstance(cls):
+        if cls._instance is None:
+            cls._instance = ImportSettings()
+        return cls._instance
+
+    def __init__(self):
+        defaults = {
+            "shouldOverwrite": False
+        }
+        self.serviceImportSettings = SettingsProvider.getInstance().getSettings(
+            "pyfaServiceImportSettings",
+            defaults
+        )
+
+    def getShouldOverwite(self):
+        return self.serviceImportSettings["shouldOverwrite"]
+
+    def setShouldOverwrite(self, value):
+        self.serviceImportSettings["shouldOverwrite"] = value
 
 
 class HTMLExportSettings:
@@ -299,12 +332,12 @@ class HTMLExportSettings:
 
     def __init__(self):
         serviceHTMLExportDefaultSettings = {
-            "path"   : config.savePath + os.sep + 'pyfaFits.html',
+            "path": config.savePath + os.sep + 'pyfaFits.html',
             "minimal": False
         }
         self.serviceHTMLExportSettings = SettingsProvider.getInstance().getSettings(
-                "pyfaServiceHTMLExportSettings",
-                serviceHTMLExportDefaultSettings
+            "pyfaServiceHTMLExportSettings",
+            serviceHTMLExportDefaultSettings
         )
 
     def getMinimalEnabled(self):
@@ -340,8 +373,8 @@ class UpdateSettings:
         # version    - Set to release tag that user does not want notifications for
         serviceUpdateDefaultSettings = {"prerelease": True, 'version': None}
         self.serviceUpdateSettings = SettingsProvider.getInstance().getSettings(
-                "pyfaServiceUpdateSettings",
-                serviceUpdateDefaultSettings
+            "pyfaServiceUpdateSettings",
+            serviceUpdateDefaultSettings
         )
 
     def get(self, type):
@@ -380,8 +413,8 @@ class EsiSettings:
         }
 
         self.settings = SettingsProvider.getInstance().getSettings(
-                "pyfaServiceEsiSettings",
-                defaults
+            "pyfaServiceEsiSettings",
+            defaults
         )
 
     def get(self, type):
@@ -407,19 +440,20 @@ class StatViewSettings:
         # 1 - Minimal/Text Only View
         # 2 - Full View
         serviceStatViewDefaultSettings = {
-            "resources"    : 2,
-            "resistances"  : 2,
-            "recharge"     : 2,
-            "firepower"    : 2,
-            "capacitor"    : 2,
+            "resources": 2,
+            "resistances": 2,
+            "recharge": 2,
+            "firepower": 2,
+            "capacitor": 2,
             "targetingMisc": 1,
-            "price"        : 2,
-            "miningyield"  : 2,
-            "drones"       : 2,
-            "outgoing"     : 2,
+            "price": 2,
+            "miningyield": 2,
+            "drones": 2,
+            "outgoing": 2,
         }
 
-        self.serviceStatViewDefaultSettings = SettingsProvider.getInstance().getSettings("pyfaServiceStatViewSettings", serviceStatViewDefaultSettings)
+        self.serviceStatViewDefaultSettings = SettingsProvider.getInstance().getSettings(
+            "pyfaServiceStatViewSettings", serviceStatViewDefaultSettings)
 
     def get(self, type):
         return self.serviceStatViewDefaultSettings[type]
@@ -443,9 +477,9 @@ class MarketPriceSettings:
         # 0 - Do not add to total
         # 1 - Add to total
         PriceMenuDefaultSettings = {
-            "drones" : 1,
-            "cargo" : 1,
-            "character" : 0,
+            "drones": 1,
+            "cargo": 1,
+            "character": 0,
             "marketMGJumpMode": 0,
             "marketMGEmptyMode": 1,
             "marketMGSearchMode": 0,
@@ -453,7 +487,7 @@ class MarketPriceSettings:
         }
 
         self.PriceMenuDefaultSettings = SettingsProvider.getInstance().getSettings("pyfaPriceMenuSettings",
-                                                                                     PriceMenuDefaultSettings)
+                                                                                   PriceMenuDefaultSettings)
 
     def get(self, type):
         return self.PriceMenuDefaultSettings[type]
@@ -477,16 +511,17 @@ class ContextMenuSettings:
         # 0 - Do not show
         # 1 - Show
         ContextMenuDefaultSettings = {
-            "ammoPattern"           : 1,
-            "changeAffectingSkills" : 1,
-            "metaSwap"              : 1,
-            "project"               : 1,
-            "moduleFill"            : 1,
-            "spoolup"               : 1,
-            "additionsCopyPaste"    : 1,
+            "ammoPattern": 1,
+            "changeAffectingSkills": 1,
+            "metaSwap": 1,
+            "project": 1,
+            "moduleFill": 1,
+            "spoolup": 1,
+            "additionsCopyPaste": 1,
         }
 
-        self.ContextMenuDefaultSettings = SettingsProvider.getInstance().getSettings("pyfaContextMenuSettings", ContextMenuDefaultSettings)
+        self.ContextMenuDefaultSettings = SettingsProvider.getInstance().getSettings(
+            "pyfaContextMenuSettings", ContextMenuDefaultSettings)
 
     def get(self, type):
         return self.ContextMenuDefaultSettings[type]
@@ -496,23 +531,24 @@ class ContextMenuSettings:
 
 
 class EOSSettings:
-        _instance = None
+    _instance = None
 
-        @classmethod
-        def getInstance(cls):
-            if cls._instance is None:
-                cls._instance = EOSSettings()
+    @classmethod
+    def getInstance(cls):
+        if cls._instance is None:
+            cls._instance = EOSSettings()
 
-            return cls._instance
+        return cls._instance
 
-        def __init__(self):
-            self.EOSSettings = SettingsProvider.getInstance().getSettings("pyfaEOSSettings", eos.config.settings)
+    def __init__(self):
+        self.EOSSettings = SettingsProvider.getInstance().getSettings(
+            "pyfaEOSSettings", eos.config.settings)
 
-        def get(self, type):
-            return self.EOSSettings[type]
+    def get(self, type):
+        return self.EOSSettings[type]
 
-        def set(self, type, value):
-            self.EOSSettings[type] = value
+    def set(self, type, value):
+        self.EOSSettings[type] = value
 
 
 class GraphSettings:
@@ -547,11 +583,13 @@ class LocaleSettings:
 
     defaults = {
         'locale': DEFAULT,
-        'eos_locale': 'Auto'  # flag for "Default" which is the same as the locale or, if not available, English
+        # flag for "Default" which is the same as the locale or, if not available, English
+        'eos_locale': 'Auto'
     }
 
     def __init__(self):
-        self.settings = SettingsProvider.getInstance().getSettings('localeSettings', self.defaults)
+        self.settings = SettingsProvider.getInstance(
+        ).getSettings('localeSettings', self.defaults)
 
         try:
             with open(os.path.join(config.pyfaPath, 'locale', 'progress.json'), "r") as f:
@@ -575,7 +613,8 @@ class LocaleSettings:
     @classmethod
     def supported_langauges(cls):
         """Requires the application to be initialized, otherwise wx.Translation isn't set."""
-        pyfalog.info(f'using "{config.CATALOG}" to fetch languages, relatively base path "{os.getcwd()}"')
+        pyfalog.info(
+            f'using "{config.CATALOG}" to fetch languages, relatively base path "{os.getcwd()}"')
         return {x: wx.Locale.FindLanguageInfo(x) for x in wx.Translations.Get().GetAvailableTranslations(config.CATALOG)}
 
     def get(self, key):

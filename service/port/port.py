@@ -42,6 +42,7 @@ from service.port.shared import IPortUser, UserCancelException, processing_notif
 from service.port.shipstats import exportFitStats
 from service.port.xml import importXml, exportXml
 from service.port.muta import parseMutant, parseDynamicItemString, fetchDynamicItem
+from service.settings import ImportSettings
 
 
 pyfalog = Logger(__name__)
@@ -80,7 +81,8 @@ class Port:
             success = True
             try:
                 iportuser.on_port_process_start()
-                backedUpFits = Port.exportXml(svcFit.getInstance().getAllFits(), iportuser)
+                backedUpFits = Port.exportXml(
+                    svcFit.getInstance().getAllFits(), iportuser)
                 backupFile = open(path, "w", encoding="utf-8")
                 backupFile.write(backedUpFits)
                 backupFile.close()
@@ -111,7 +113,8 @@ class Port:
             iportuser.on_port_process_start()
             success, result = Port.importFitFromFiles(paths, iportuser)
             flag = IPortUser.ID_ERROR if not success else IPortUser.ID_DONE
-            iportuser.on_port_processing(IPortUser.PROCESS_IMPORT | flag, result)
+            iportuser.on_port_processing(
+                IPortUser.PROCESS_IMPORT | flag, result)
 
         threading.Thread(
             target=importFitsFromFileWorkerFunc,
@@ -128,6 +131,7 @@ class Port:
         """
 
         sFit = svcFit.getInstance()
+        importSettings = ImportSettings.getInstance()
 
         fit_list = []
         try:
@@ -135,7 +139,8 @@ class Port:
                 if iportuser:  # Pulse
                     msg = "Processing file:\n%s" % path
                     pyfalog.debug(msg)
-                    processing_notify(iportuser, IPortUser.PROCESS_IMPORT | IPortUser.ID_UPDATE, msg)
+                    processing_notify(
+                        iportuser, IPortUser.PROCESS_IMPORT | IPortUser.ID_UPDATE, msg)
                     # wx.CallAfter(callback, 1, msg)
 
                 with open(path, "rb") as file_:
@@ -148,7 +153,8 @@ class Port:
                     continue
 
                 try:
-                    importType, makesNewFits, fitsImport = Port.importAuto(srcString, path, iportuser=iportuser)
+                    importType, makesNewFits, fitsImport = Port.importAuto(
+                        srcString, path, iportuser=iportuser)
                     fit_list += fitsImport
                 except xml.parsers.expat.ExpatError:
                     pyfalog.warning("Malformed XML in:\n{0}", path)
@@ -166,13 +172,23 @@ class Port:
                 else:
                     useCharImplants = sFit.serviceFittingOptions["useCharacterImplantsByDefault"]
                     fit.implantLocation = ImplantLocation.CHARACTER if useCharImplants else ImplantLocation.FIT
+
+                if importSettings.getShouldOverwite():
+                    existingFits = sFit.getFitsWithShip(fit.shipID)
+                    if len(existingFits) > 0:
+                        for eFit in existingFits:
+                            if eFit[1] == fit.name:
+                                svcFit.deleteFit(eFit[0])
+
                 db.save(fit)
                 # IDs.append(fit.ID)
                 if iportuser:  # Pulse
-                    pyfalog.debug("Processing complete, saving fits to database: {0}/{1}", idx + 1, numFits)
+                    pyfalog.debug(
+                        "Processing complete, saving fits to database: {0}/{1}", idx + 1, numFits)
                     processing_notify(
                         iportuser, IPortUser.PROCESS_IMPORT | IPortUser.ID_UPDATE,
-                        "Processing complete, saving fits to database\n(%d/%d) %s" % (idx + 1, numFits, fit.ship.name)
+                        "Processing complete, saving fits to database\n(%d/%d) %s" % (
+                            idx + 1, numFits, fit.ship.name)
                     )
 
         except UserCancelException:
@@ -195,7 +211,8 @@ class Port:
         # TODO: catch the exception?
         # activeFit is reserved?, bufferStr is unicode? (assume only clipboard string?
         sFit = svcFit.getInstance()
-        importType, makesNewFits, importData = Port.importAuto(bufferStr, activeFit=activeFit)
+        importType, makesNewFits, importData = Port.importAuto(
+            bufferStr, activeFit=activeFit)
 
         if makesNewFits:
             for fit in importData:
@@ -246,7 +263,8 @@ class Port:
         dnaPattern = "\d+(:\d+(;\d+))*::"
         if re.match(dnaPattern, firstLine):
             return "DNA", True, (cls.importDna(string),)
-        dnaChatPattern = "<url=fitting:(?P<dna>{})>(?P<fitName>[^<>]+)</url>".format(dnaPattern)
+        dnaChatPattern = "<url=fitting:(?P<dna>{})>(?P<fitName>[^<>]+)</url>".format(
+            dnaPattern)
         m = re.search(dnaChatPattern, firstLine)
         if m:
             return "DNA", True, (cls.importDna(m.group("dna"), fitName=m.group("fitName")),)
